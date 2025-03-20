@@ -1,1 +1,99 @@
-<iframe src="https://RafatHaQ.github.io/photocatalysis-animation/" width="800" height="600"></iframe>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photocatalysis Simulation</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+<script>
+    // Setup Scene
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // TiO2 Particle
+    const TiO2Geo = new THREE.SphereGeometry(1.5, 32, 32);
+    const TiO2Mat = new THREE.MeshStandardMaterial({ color: 0x88cc88, roughness: 0.5 });
+    const TiO2 = new THREE.Mesh(TiO2Geo, TiO2Mat);
+    scene.add(TiO2);
+
+    // Light Source
+    const light = new THREE.PointLight(0xffffaa, 2, 10);
+    light.position.set(5, 5, 5);
+    scene.add(light);
+
+    // Moving Electrons (Blue) & Holes (Red)
+    const particles = [];
+    for (let i = 0; i < 10; i++) {
+        const particleGeo = new THREE.SphereGeometry(0.1, 16, 16);
+        const particleMat = new THREE.MeshStandardMaterial({ color: i % 2 == 0 ? 0x0000ff : 0xff0000 });
+        const particle = new THREE.Mesh(particleGeo, particleMat);
+
+        particle.position.set(Math.random() * 3 - 1.5, Math.random() * 3 - 1.5, Math.random() * 3 - 1.5);
+        scene.add(particle);
+        particles.push(particle);
+    }
+
+    // O2 Molecule
+    const O2 = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 16), new THREE.MeshStandardMaterial({ color: 0xff8800 }));
+    O2.position.set(2, 1, 0);
+    scene.add(O2);
+
+    // H2O Molecule
+    const H2O = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 16), new THREE.MeshStandardMaterial({ color: 0x4488ff }));
+    H2O.position.set(-2, 1, 0);
+    scene.add(H2O);
+
+    // Organic Pollutant
+    const pollutant = new THREE.Mesh(new THREE.SphereGeometry(0.3, 16, 16), new THREE.MeshStandardMaterial({ color: 0x996633 }));
+    pollutant.position.set(0, -1.5, 0);
+    scene.add(pollutant);
+
+    // Animate Electrons & Holes
+    function animateParticles() {
+        particles.forEach(p => {
+            p.position.y += (Math.random() - 0.5) * 0.02;
+            p.position.x += (Math.random() - 0.5) * 0.02;
+        });
+    }
+
+    // Trigger Photocatalysis Reaction on Click
+    window.addEventListener('click', () => {
+        // Move O2 toward TiO2 and transform into O2-
+        gsap.to(O2.position, { x: 0, y: 0, z: 0, duration: 1.5, onComplete: () => {
+            gsap.to(O2.scale, { x: 0.5, y: 0.5, z: 0.5, duration: 0.5 }); // Convert O2 to O2-
+        }});
+
+        // Move H2O toward TiO2 and transform into OH•
+        gsap.to(H2O.position, { x: 0, y: -0.5, z: 0, duration: 1.5, onComplete: () => {
+            gsap.to(H2O.scale, { x: 0.5, y: 0.5, z: 0.5, duration: 0.5 });
+        }});
+
+        // Break Down Pollutant into H2O and CO2
+        gsap.to(pollutant.scale, { x: 0.1, y: 0.1, z: 0.1, duration: 2, onComplete: () => {
+            scene.remove(pollutant);
+        }});
+    });
+
+    // Main Animation Loop
+    function animate() {
+        requestAnimationFrame(animate);
+
+        TiO2.rotation.y += 0.005;
+        animateParticles();
+
+        renderer.render(scene, camera);
+    }
+    animate();
+</script>
+</body>
+</html>
